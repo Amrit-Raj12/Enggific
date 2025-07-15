@@ -1,0 +1,110 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchTerms, updateTerms } from "@/redux/termsSlice";
+import JoditEditor from 'jodit-react';
+import UsersAndTersmsNavbar from "@/adminComponents/UsersNavbar";
+import { Loader2 } from "lucide-react";
+import { toast } from "react-toastify";
+import MainLoader from "@/adminComponents/MainLoader";
+
+const TermsAndConditions = () => {
+    const dispatch = useDispatch();
+    const editor = useRef(null);
+    const { content } = useSelector((state) => state.terms);
+    const [termsContent, setTermsContent] = useState(content);
+    const [termsLoading, setTermsLoading] = useState(false);
+    const [loadingTerms, setLoadingTerms] = useState(false);
+
+    useEffect(() => {
+        const loadTerms = async () => {
+            if (loadingTerms) return; // Prevent multiple calls
+            setLoadingTerms(true); // Set loading to true before fetching
+    
+            try {
+                await dispatch(fetchTerms());
+            } catch (error) {
+                console.error("Failed to fetch enquiries:", error);
+                // Optionally, you can set an error state here
+            } finally {
+                setLoadingTerms(false); // Always set loading to false after fetching
+            }
+        };
+        
+        loadTerms();
+    }, [dispatch]);
+    
+    useEffect(() => {
+        setTermsContent(content);
+    }, [content]);
+
+    if (loadingTerms) {
+        return (
+            <MainLoader />
+        )
+    }
+
+    const handleSave = async () => {
+        try {
+            setTermsLoading(true);
+            await dispatch(updateTerms(termsContent)).unwrap();
+            toast.success('Terms and Conditions updated successfully');
+        } catch (err) {
+            const errorMessage = error?.error || error?.message || "Failed to update terms and conditions";
+            toast.error(errorMessage);
+        } finally {
+            setTermsLoading(false);
+        }
+    };
+
+    return (
+        <div>
+            <UsersAndTersmsNavbar title="Terms and Conditions" />
+       
+        <div className="min-h-screen bg-gray-100 p-6">
+            
+            <div className="max-w-4xl mx-auto mt-6 p-6 bg-white rounded-lg shadow-lg">
+           
+          
+                <>
+                 <div className="mb-4">
+                    <JoditEditor
+                        ref={editor}
+                        value={termsContent}
+                        config={{
+                            placeholder: "" // Set the placeholder to an empty string
+                        }}
+                        tabIndex={1}
+                        onBlur={newContent => setTermsContent(newContent)}
+                        onChange={newContent => {}}
+                    />
+                    </div>
+                    <div className="text-right">
+                    <button onClick={handleSave} 
+                                className="bg-[#E5810C] text-white px-4 py-2 rounded hover:bg-[#E5810C] focus:outline-none">
+                        {termsLoading ? <Loader2 className="animate-spin h-5 w-5" /> : "Save"}
+                    </button>
+                    </div>
+                </>
+      
+            </div>
+        </div>
+        </div>
+    );
+};
+
+export default TermsAndConditions;
+
+
+// const editorConfig = {
+    //     buttons: [
+    //         'bold', 'italic', 'underline', 'strikethrough', 
+    //         'align', 'undo', 'redo', 'ul', 'ol', 'outdent', 'indent', 'font', 'fontsize', 'brush', 'link'
+    //     ],
+    //     toolbarSticky: false,
+    //     showXPathInStatusbar: false,
+    //     askBeforePasteHTML: false,
+    //     askBeforePasteFromWord: false,
+    //     defaultActionOnPaste: 'insert_only_text',
+    // };
+
+     // config={editorConfig}
